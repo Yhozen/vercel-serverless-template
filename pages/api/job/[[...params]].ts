@@ -11,6 +11,10 @@ import { UpdateJobDTO } from 'server/dto/job/update-job.dto'
 import { Auth } from 'server/middlewares/auth.middleware'
 import { WithMongo } from 'server/middlewares/mongo.middleware'
 import { JobData, JobModel } from 'server/models/job.model'
+import {
+  CurrentUser,
+  MagicUser,
+} from 'server/param-decorators/current-user.decorator'
 import { GetAllJobs, GetJob } from 'server/responses/job.response'
 
 class JobHandler {
@@ -24,11 +28,23 @@ class JobHandler {
     return { success: true, data: job }
   }
 
+  @WithMongo()
+  @Get('/getOwnJobs/')
+  async getOwnJobs(@CurrentUser() user: MagicUser): Promise<GetJob> {
+    const job = await JobModel.findOne({ owner: user.email })
+
+    if (!job) throw new Error('no job')
+
+    return { success: true, data: job }
+  }
   @Auth()
   @WithMongo()
   @Post('/create')
-  async createUser(@Body(ValidationPipe) body: JobDTO): Promise<JobData> {
-    const person = await JobModel.create(body)
+  async createJob(
+    @Body(ValidationPipe) body: JobDTO,
+    @CurrentUser() user: MagicUser,
+  ): Promise<JobData> {
+    const person = await JobModel.create({ ...body, owner: user.email })
 
     return person
   }

@@ -12,6 +12,8 @@ class Job implements JobData {
 
   @prop()
   public position?: string
+  @prop()
+  public owner: string
 }
 
 export const JobModel = getModelForClass(Job)
